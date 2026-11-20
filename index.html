@@ -964,7 +964,26 @@ body:has(#view-auth:not([hidden])) .bar{display:none}
   }
   $('#out').addEventListener('click', logOut);
   $('#aboutout').addEventListener('click', logOut);
-  restoreSession();
+  /* ---- email confirmation link: log in automatically ---- */
+  function fromLink() {
+    var h = location.hash || '';
+    if (h.length < 2 || !/access_token=|error=/.test(h)) return false;
+    var q = {}; h.slice(1).split('&').forEach(function (p) { var i = p.indexOf('='); if (i > 0) { try { q[p.slice(0, i)] = decodeURIComponent(p.slice(i + 1).replace(/\+/g, ' ')); } catch (e) {} } });
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    if (q.access_token && q.refresh_token) {
+      sbFetch('/auth/v1/user', null, q.access_token).then(function (r) {
+        if (r.ok && r.j && r.j.id) {
+          var nm = (r.j.user_metadata && r.j.user_metadata.name) || 'Friend';
+          saveSession({ access_token: q.access_token, refresh_token: q.refresh_token, user: r.j });
+          enter(nm);
+        } else { $('#err').textContent = 'That link did not work. Please log in.'; }
+      }).catch(function () { $('#err').textContent = 'You are offline. Connect to the internet and log in.'; });
+      return true;
+    }
+    if (q.error) $('#err').textContent = 'That link expired or was already used. Log in, or sign up again.';
+    return false;
+  }
+  if (!fromLink()) restoreSession();
   function enter(name) {
     $('#err').textContent = ''; $('#f-pass').value = '';
     $('#who').textContent = name;

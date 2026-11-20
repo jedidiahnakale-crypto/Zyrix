@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jedidiahnakale-crypto.github.io/Zyrix/sitemap.xml
